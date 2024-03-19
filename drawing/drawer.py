@@ -24,13 +24,15 @@ class Drawer(Graph):
         )
 
     # НАЧАЛЬНЫЕ И КОНЕЧНЫЕ МОТОДЫ ОТРИСОВКИ
-    def cleaning_and_chart_graph(self, x_label=None, y_label=None, title=None) -> None:
+    def cleaning_and_chart_graph(self, x_label=None, y_label=None, title=None, go_home=True) -> None:
         """ Очистка и подпись графика.
         :param x_label: название оси x.
         :param y_label: название оси y.
         :param title: название графика."""
         # Возвращаем зум в домашнюю позицию
-        self.toolbar.home()
+        if go_home:
+            print("home")
+            self.toolbar.home()
         # Очищаем стек осей (от старых x, y lim)
         self.toolbar.update()
         # Очищаем график
@@ -83,11 +85,13 @@ class Drawer(Graph):
     def draw_gas(
             self,
             without_substance: pd.DataFrame = pd.DataFrame(),
-            with_substance: pd.DataFrame = pd.DataFrame()) -> None:
+            with_substance: pd.DataFrame = pd.DataFrame(),
+            select: pd.DataFrame = pd.DataFrame()) -> None:
         """Отрисовка данных с веществом и без вещества
 
         Parameters
         ----------
+        select
         without_substance : pd.DataFrame
             данные без вещества
         with_substance : pd.DataFrame
@@ -98,7 +102,15 @@ class Drawer(Graph):
             return
 
         # Очистка, подпись графика и осей (вызывается в начале)
-        self.cleaning_and_chart_graph()
+        if select.empty:
+            self.cleaning_and_chart_graph()
+        else:
+            # Сохранение текущих значений пределов осей X и Y
+            x_min, x_max = self.axis.get_xlim()
+            y_min, y_max = self.axis.get_ylim()
+            self.cleaning_and_chart_graph(go_home=False)
+            self.axis.set_xlim(x_min, x_max)
+            self.axis.set_ylim(y_min, y_max)
 
         # Рисуем график
         if not without_substance.empty:
@@ -118,6 +130,12 @@ class Drawer(Graph):
                 color=COLOR_WITH_GAS,
                 marker="x"
             )
+        if not select.empty:
+            self.axis.plot(
+                select['FREQUENCY'],
+                select['GAMMA'],
+            )
 
         # Отрисовка (вызывается в конце)
         self.draw_graph()
+
